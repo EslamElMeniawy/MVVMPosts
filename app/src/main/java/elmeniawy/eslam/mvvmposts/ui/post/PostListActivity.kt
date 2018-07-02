@@ -10,6 +10,7 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import elmeniawy.eslam.mvvmposts.R
 import elmeniawy.eslam.mvvmposts.databinding.ActivityPostListBinding
+import elmeniawy.eslam.mvvmposts.injection.ViewModelFactory
 
 /**
  * PostListActivity
@@ -29,7 +30,8 @@ class PostListActivity : AppCompatActivity() {
         binding.postList.layoutManager = LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false)
 
-        viewModel = ViewModelProviders.of(this).get(PostListViewModel::class.java)
+        viewModel = ViewModelProviders.of(this, ViewModelFactory(this))
+                .get(PostListViewModel::class.java)
 
         viewModel.errorMessage.observe(this, Observer { errorMessage ->
             if (errorMessage != null) showError(errorMessage) else hideError()

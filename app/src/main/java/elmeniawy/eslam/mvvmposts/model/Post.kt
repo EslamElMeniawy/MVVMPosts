@@ -1,5 +1,8 @@
 package elmeniawy.eslam.mvvmposts.model
 
+import android.arch.persistence.room.Entity
+import android.arch.persistence.room.PrimaryKey
+
 /**
  * Post
  * Class which provides a model for post.
@@ -12,4 +15,5 @@ package elmeniawy.eslam.mvvmposts.model
  * Created by Eslam El-Meniawy on 02-Jul-2018.
  * CITC - Mansoura University
  */
-data class Post(val userId: Int, val id: Int, val title: String, val body: String)
+@Entity
+data class Post(val userId: Int, @field:PrimaryKey val id: Int, val title: String, val body: String)

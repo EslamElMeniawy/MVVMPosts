@@ -6,7 +6,9 @@ import android.view.View
 import elmeniawy.eslam.mvvmposts.R
 import elmeniawy.eslam.mvvmposts.base.BaseViewModel
 import elmeniawy.eslam.mvvmposts.model.Post
+import elmeniawy.eslam.mvvmposts.model.PostDao
 import elmeniawy.eslam.mvvmposts.network.PostApi
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -18,7 +20,7 @@ import javax.inject.Inject
  * Created by Eslam El-Meniawy on 02-Jul-2018.
  * CITC - Mansoura University
  */
-class PostListViewModel : BaseViewModel() {
+class PostListViewModel(private val postDao: PostDao) : BaseViewModel() {
     @Inject
     lateinit var postApi: PostApi
 
@@ -38,14 +40,32 @@ class PostListViewModel : BaseViewModel() {
     }
 
     private fun loadPosts() {
-        subscription = postApi.getPosts()
+//        subscription = postApi.getPosts()
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .doOnSubscribe { onRetrievePostListStart() }
+//                .doOnTerminate { onRetrievePostListFinish() }
+//                .subscribe(
+//                        { result -> onRetrievePostListSuccess(result) },
+//                        { error -> onRetrievePostListError(error) }
+//                )
+        subscription = Observable.fromCallable { postDao.all }
+                .concatMap { dbPostList ->
+                    if (dbPostList.isEmpty())
+                        postApi.getPosts().concatMap { apiPostList ->
+                            postDao.insertAll(*apiPostList.toTypedArray())
+                            Observable.just(apiPostList)
+                        }
+                    else
+                        Observable.just(dbPostList)
+                }
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .doOnSubscribe { onRetrievePostListStart() }
                 .doOnTerminate { onRetrievePostListFinish() }
                 .subscribe(
                         { result -> onRetrievePostListSuccess(result) },
-                        { error -> onRetrievePostListError(error) }
+                        { throwable -> onRetrievePostListError(throwable) }
                 )
     }
 
@@ -62,8 +82,8 @@ class PostListViewModel : BaseViewModel() {
         postListAdapter.updatePostList(postList)
     }
 
-    private fun onRetrievePostListError(e: Throwable) {
-        Log.e("Posts", e.message, e)
+    private fun onRetrievePostListError(throwable: Throwable) {
+        Log.e(PostListViewModel::class.simpleName, throwable.message, throwable)
         errorMessage.value = R.string.post_error
     }
 }
